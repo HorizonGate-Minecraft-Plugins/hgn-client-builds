@@ -125,8 +125,8 @@
 			"minecraft": "1.21.4",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.4-fabric.jar",
-			"size": 3642139,
-			"sha256": "0153e491c68d0aff59e7be76ebefa46ae438e156a42b379cb5bab4ff69875775"
+			"size": 3650781,
+			"sha256": "d110dc23d19121c97c363aa94bbd181722f54db9fb3209a769f366e6312d8981"
 		},
 		{
 			"minecraft": "1.21.4",
