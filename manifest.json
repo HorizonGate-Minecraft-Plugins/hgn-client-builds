@@ -1,6 +1,6 @@
 {
 	"schema": 1,
-	"clientVersion": "1.7.13",
+	"clientVersion": "1.7.20",
 	"builds": [
 		{
 			"minecraft": "1.21",
@@ -125,8 +125,8 @@
 			"minecraft": "1.21.4",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.4-fabric.jar",
-			"size": 3650781,
-			"sha256": "d110dc23d19121c97c363aa94bbd181722f54db9fb3209a769f366e6312d8981"
+			"size": 3769489,
+			"sha256": "ae31b8ff3f68af3ba284acc5f014201166e8f8a6eefcf6cb5ed87a29cda93d92"
 		},
 		{
 			"minecraft": "1.21.4",
