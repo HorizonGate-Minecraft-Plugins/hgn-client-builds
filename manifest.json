@@ -1,251 +1,251 @@
 {
 	"schema": 1,
-	"clientVersion": "1.7.38-alpha.2",
+	"clientVersion": "1.7.39-alpha.1",
 	"builds": [
 		{
 			"minecraft": "1.21",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21-fabric.jar",
-			"size": 2829730,
-			"sha256": "7d34cbaf52f588fbe059bde745fd91e65bb21c29460aaa7725ec8748558d684d"
+			"size": 2574755,
+			"sha256": "5acda1aecead882b6a36c66ce6ea3155e9495c1a88bc513c353010b963b00d06"
 		},
 		{
 			"minecraft": "1.21",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21-forge.jar",
-			"size": 2535365,
-			"sha256": "674b6f97ec3dd4804a6d1ac09a9253e9434f7e2b9cbbe70d1df9a115ecc45057"
+			"size": 2279595,
+			"sha256": "2291d6eb742d2f8772571ded457589bcb1d4ecc97244e232d95a65893c6a9579"
 		},
 		{
 			"minecraft": "1.21",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21-neoforge.jar",
-			"size": 2535328,
-			"sha256": "9886952b20dfd6979bc7a6c7c34ec0a274f76f735dc7f93ace7143331f0fab2c"
+			"size": 2280001,
+			"sha256": "5ff8acc09bdd5004a95768649f5d1cda9059058d3e1af719965c8ce6c389643a"
 		},
 		{
 			"minecraft": "1.21.1",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.1-fabric.jar",
-			"size": 2831003,
-			"sha256": "56ecc4efe37d4ad66cf49b558c64cf9daed42725513d966a96af1399875dfd9f"
+			"size": 2576029,
+			"sha256": "9116bf396d793db4dec3c5256cdf64a1c62e339ebc8acbbdb6a4d5756004793d"
 		},
 		{
 			"minecraft": "1.21.1",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.1-forge.jar",
-			"size": 2535368,
-			"sha256": "e4e8fff31ea9a285d35ac4d9a8e1426308f631071466f028d9874ded51614e63"
+			"size": 2279598,
+			"sha256": "b3df98d4fa975ddebbccd674cb4af71be6c38d6890fc8c83660dc04e24f4e894"
 		},
 		{
 			"minecraft": "1.21.1",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.1-neoforge.jar",
-			"size": 2535330,
-			"sha256": "a527d521d1c874898424faca9bb85a49f334b07a695e2ba97927f753edfb02bd"
+			"size": 2280003,
+			"sha256": "b3ed6ebb6a404f5ff3f21107f58bfdb5bdd34e5e721f2aa632e9eba5a9a56a84"
 		},
 		{
 			"minecraft": "1.21.10",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.10-fabric.jar",
-			"size": 2851234,
-			"sha256": "5237ac0aedf2589a72c68cfc96cdaa7c51cea2eff8a4109ed8510eece0f4f72d"
+			"size": 2596260,
+			"sha256": "ffed36c3da18cf6eb4139edc8c4d8dfcfda71dcd7806b01607b20c81dd920ffc"
 		},
 		{
 			"minecraft": "1.21.10",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.10-forge.jar",
-			"size": 2535352,
-			"sha256": "b6dffa34fa912e0dd804622ad8e41343704b6b0c8625958d4994482d4a3a2b5e"
+			"size": 2279580,
+			"sha256": "8f433b2210b380bd4daf73d28f4cc0791f61586e9cdc55cd01ef455ae3652a36"
 		},
 		{
 			"minecraft": "1.21.10",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.10-neoforge.jar",
-			"size": 2535319,
-			"sha256": "8b68abeb7c1f6935d3cdeae0b1aad7e126ad2a2a0044ccba598cbd018b01592a"
+			"size": 2279991,
+			"sha256": "1d5ebe052df6530c98be25eae497f5a93a9684e1dddd65bc993db2dee552644e"
 		},
 		{
 			"minecraft": "1.21.11",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.11-fabric.jar",
-			"size": 2773314,
-			"sha256": "25ce4cec1ecff02931519f0d18e22f359581fee07d2f7b3c4b134ff8bea3bbdb"
+			"size": 2518339,
+			"sha256": "3a777cab1ffb0d9a4889307553cdb4818cf2bbcb81a1d9162e09665ce104e803"
 		},
 		{
 			"minecraft": "1.21.11",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.11-forge.jar",
-			"size": 2535395,
-			"sha256": "5c42effc36f041399d6b6d05a438ce3a536580e85ae3ab5528ed8947d929dcaf"
+			"size": 2279620,
+			"sha256": "1d00d49bf54e923a735ce56022fe861baf895c7a9ecee7e31708260c47aacd50"
 		},
 		{
 			"minecraft": "1.21.11",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.11-neoforge.jar",
-			"size": 2535361,
-			"sha256": "78a21313f7135acee5c2d6e0fb4a20585de6b3ea6f59cedb6460f74704c31218"
+			"size": 2280032,
+			"sha256": "5cac0933c74799f350229bac809c1e0369f7bd2e4b94c52361ce941a0da51ee0"
 		},
 		{
 			"minecraft": "1.21.2",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.2-fabric.jar",
-			"size": 2831434,
-			"sha256": "15fff28fade8536cb1fb278adee2d11201199fb3ec6833dfadbf4dfbb3ee21e2"
+			"size": 2576462,
+			"sha256": "137b75800a90af8cd02ede4da7b270318550365b21ae6fc9eb60fbd434f80d2b"
 		},
 		{
 			"minecraft": "1.21.2",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.2-neoforge.jar",
-			"size": 2535634,
-			"sha256": "7b62e2cf067d910ccb0c52f03e31eb6dd1984f7c77a35ff9e5667d81db1e8f7e"
+			"size": 2280309,
+			"sha256": "8f671b08a2524df9a6f4a19da62597473535588cc651e9f165a8ed87b3b7fd16"
 		},
 		{
 			"minecraft": "1.21.3",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.3-fabric.jar",
-			"size": 2831684,
-			"sha256": "3cb8ad355b1d34a03bfb64a2b4afa616236f6937195eae7eae08f984bab0a167"
+			"size": 2576710,
+			"sha256": "354e93ef34b4f6cf7f091b331c76f440a29aa2a3012dc27640b16a0899c12916"
 		},
 		{
 			"minecraft": "1.21.3",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.3-forge.jar",
-			"size": 2535675,
-			"sha256": "e352b38c62282dee373071030658c242c6cef78e59b7f78c59e1bd16c6a86475"
+			"size": 2279906,
+			"sha256": "e29584d235403aed7e70e4d8a5dc71ff18876dae64e07a52af7a32b0847f28a4"
 		},
 		{
 			"minecraft": "1.21.3",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.3-neoforge.jar",
-			"size": 2535637,
-			"sha256": "1bb9cdcd6aad9ebb3802d5b0e67c2910efa8cf6d9b44eca44bf39dde28a47e80"
+			"size": 2280312,
+			"sha256": "c23689b587b08b60c9407f5c011e46546bdbfeeef0e703f5131f6e4202d076b7"
 		},
 		{
 			"minecraft": "1.21.4",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.4-fabric.jar",
-			"size": 2842167,
-			"sha256": "5ecd0b3a0e07643d18705b2b8de8747da75d2b709dc976dcb41a26a01f6e4709"
+			"size": 2587197,
+			"sha256": "3b5131323e1fb802b62250ece29de12ad8f6c63183618932c1b58d05fa3c4818"
 		},
 		{
 			"minecraft": "1.21.4",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.4-forge.jar",
-			"size": 2535676,
-			"sha256": "54b789bc7c7e0c42608709268ac7f47962c7bfb4567651e292812fed1aadf048"
+			"size": 2279907,
+			"sha256": "baaeb8334ac6a7457f27d3c4f380b30ca518d0fdfe3ba4d3bd36219ffab56fe2"
 		},
 		{
 			"minecraft": "1.21.4",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.4-neoforge.jar",
-			"size": 2535638,
-			"sha256": "b1cc2add14143a8e7ff79bc766d7d1b1f286a0c6bab71564d9d16dff674c28fb"
+			"size": 2280312,
+			"sha256": "4ce85ae02de5c3eed96cd3bb51c8d08573accb3ae014883478e915cadcb84d8e"
 		},
 		{
 			"minecraft": "1.21.5",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.5-fabric.jar",
-			"size": 2839290,
-			"sha256": "de3cb3948d35d65884fd8278575fc2d84f959ff14066cc49274205a2478bc808"
+			"size": 2584317,
+			"sha256": "785b293d5937f07e270bec6a2327a12803d6600e7b2fc56b68bd0df34faadf58"
 		},
 		{
 			"minecraft": "1.21.5",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.5-forge.jar",
-			"size": 2535677,
-			"sha256": "a6e9e7f1f02d10016c56d4380ef828056513b762a111dc3b1e7d7ea667ec4aec"
+			"size": 2279909,
+			"sha256": "f67d9d4944a9817b7b7bd5f8ec483ee27c834951e5f729b325358a6c47fc74eb"
 		},
 		{
 			"minecraft": "1.21.5",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.5-neoforge.jar",
-			"size": 2535639,
-			"sha256": "eee2f45258d986018a2bf5cbbdbe50830f8543801ebe5fc04f06da0aeaf9e51a"
+			"size": 2280314,
+			"sha256": "598f1a339f043765a127d0e4d9eaf13bf2cc05b5d91fec25c07a412f5c17fd20"
 		},
 		{
 			"minecraft": "1.21.6",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.6-fabric.jar",
-			"size": 2838410,
-			"sha256": "4c79724b37657adde7bf1fe618a95c8662f19d94cb57ee112ef03f7008d04047"
+			"size": 2583437,
+			"sha256": "4b08f998baf696fe74dc2983069901d0401c2353ebb6532d189ad99de00bad1f"
 		},
 		{
 			"minecraft": "1.21.6",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.6-forge.jar",
-			"size": 2535323,
-			"sha256": "cbe55745d731f86ab564616024cae0643faf54f3f8c64f9e9dc5aee8ef0a8250"
+			"size": 2279554,
+			"sha256": "8e1b0182e7798f95b2cf620831714d864ea9063f722e7f47141bf50ea567f959"
 		},
 		{
 			"minecraft": "1.21.6",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.6-neoforge.jar",
-			"size": 2535285,
-			"sha256": "1bcef0bb0ee0f4861a6cb12ad683834443466c3ec4763cff7741c69bc1feda4a"
+			"size": 2279959,
+			"sha256": "201e94228ec8713f8983de873e3e16afec5639c024cedc83c31bd84be43b5da9"
 		},
 		{
 			"minecraft": "1.21.7",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.7-fabric.jar",
-			"size": 2838390,
-			"sha256": "a3dddd5e3977a159bd5a47e2966925222c9842ad45df707c11ec0a7ad6220890"
+			"size": 2583417,
+			"sha256": "a15edd55d29be1a826f4495f5e8c0dd8252475db9d587d51c068f6b8b2b027c8"
 		},
 		{
 			"minecraft": "1.21.7",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.7-forge.jar",
-			"size": 2535319,
-			"sha256": "298e6cffbad80593aad1bbbe587acacba3c9d4218225d8cad12e9cb90f9e0911"
+			"size": 2279549,
+			"sha256": "4de53735aaed9b4b91f333667573299e6019b39e4d5c532d01a6e71ad316f93d"
 		},
 		{
 			"minecraft": "1.21.7",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.7-neoforge.jar",
-			"size": 2535286,
-			"sha256": "eec0ce530c015e965b966f158622979a49380fd69a750e37be8ebffc9cc73280"
+			"size": 2279960,
+			"sha256": "f59ab4e1c8dba3fa1028c50919ac91142900f4b05a76b8805c8e56aafaeb3da5"
 		},
 		{
 			"minecraft": "1.21.8",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.8-fabric.jar",
-			"size": 2861266,
-			"sha256": "688bf105eab38196a5396ac7dab315b3346303c0ebe061b490cbf11f5b6050a3"
+			"size": 2606295,
+			"sha256": "0c33d283bbc40819d589d81c9ef5da17aae5746ce72fe277edb240cea9373e2e"
 		},
 		{
 			"minecraft": "1.21.8",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.8-forge.jar",
-			"size": 2535322,
-			"sha256": "945aa0a675da20b898cc0f99c9c9f2b6e103d5cdc423e9ef70e270a622fb007b"
+			"size": 2279554,
+			"sha256": "6dd4256f0ea119353c230e6bbf12d8a425bef5071aaf899f465126726578e0a9"
 		},
 		{
 			"minecraft": "1.21.8",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.8-neoforge.jar",
-			"size": 2535288,
-			"sha256": "6142910fbf2b6947fbe6510a088c4c639f94393e45ca5377d83aebdec36aaba9"
+			"size": 2279964,
+			"sha256": "310dfd13f0008827c5bf84041fa49374dcd0841a5d2fbdb50ffd254185ac8ca1"
 		},
 		{
 			"minecraft": "1.21.9",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.9-fabric.jar",
-			"size": 2830491,
-			"sha256": "bb6300b43b7caccb52e5767b4785663fa665686ca5b43e1a2180a0e7b29ddd4e"
+			"size": 2575517,
+			"sha256": "4b163f50c1583362c6e147c1ec48ddd630cf2b46005edb47d9a5083478934741"
 		},
 		{
 			"minecraft": "1.21.9",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.9-forge.jar",
-			"size": 2535348,
-			"sha256": "ccab3aa9d0dbbdad3b260ed7e7f0dff0acce8e3452aaf3c4f8453ca1c0ac43e5"
+			"size": 2279574,
+			"sha256": "7b5b052fcf30b110eb6c831034c2811434a9ad80a8dbfee008c7a88be5f0a657"
 		},
 		{
 			"minecraft": "1.21.9",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.9-neoforge.jar",
-			"size": 2535314,
-			"sha256": "2caccd0b89aff312773cc9cf004a4065aae94c90f6d0bdeba6376549f9156fec"
+			"size": 2279985,
+			"sha256": "e3b13dcf442a7f6a13b2498eb36b8507ef3488a2aaf3abddeb786aadad70ef24"
 		}
 	]
 }
