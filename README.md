@@ -38,7 +38,10 @@ instance it cannot patch.
 
 ## Coverage
 
-Minecraft 1.21 through 1.21.11 on Fabric, Forge and NeoForge — 35 builds.
+The current Alpha publishes Minecraft 1.21.4 only, on Fabric, Forge, and
+NeoForge. This keeps testing on one game API while the new UI and supplied-model
+cosmetic renderer stabilize. Stable publication restores the Minecraft 1.21
+through 1.21.11 loader matrix (35 builds).
 
 Two gaps are upstream, not missing work:
 
@@ -49,7 +52,7 @@ Two gaps are upstream, not missing work:
 
 ## Updating
 
-From the launcher repository, after building the matrix:
+From the launcher repository, after building the current targets:
 
 ```
 node client/tools/collect-builds.mjs <path-to-this-repo>
