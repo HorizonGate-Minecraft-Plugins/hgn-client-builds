@@ -6,22 +6,22 @@
 			"minecraft": "1.21.4",
 			"loader": "fabric",
 			"file": "jars/hgn-client-1.21.4-fabric.jar",
-			"size": 11393790,
-			"sha256": "ba83cc1f5eab23e7237856026ec678750ebdb594a5fe9fce68f919fa4f01bb1a"
+			"size": 11395514,
+			"sha256": "92d4e9f87935132ebf561b78c32ff44727a0846dd7285b5b5b172d594c44adc4"
 		},
 		{
 			"minecraft": "1.21.4",
 			"loader": "forge",
 			"file": "jars/hgn-client-1.21.4-forge.jar",
-			"size": 11088201,
-			"sha256": "a095bbd47ab608c6c259d98e6fdca13d1bc984322d9ae778b48e2a3d46d760d0"
+			"size": 11089936,
+			"sha256": "c3e2aaa4b6eaebb03c226b7d76c993e2e267760d71d474cc5c06acbc57b91efb"
 		},
 		{
 			"minecraft": "1.21.4",
 			"loader": "neoforge",
 			"file": "jars/hgn-client-1.21.4-neoforge.jar",
-			"size": 11088607,
-			"sha256": "8d420f79046a375c66d192896bb125db6e80b980042ea6f6e86ca1dc6534eaff"
+			"size": 11090342,
+			"sha256": "33288f2da58c1a44bd03a7626b0ccc39d31bd8b7d849408b5a8a08226748c70c"
 		}
 	]
 }
