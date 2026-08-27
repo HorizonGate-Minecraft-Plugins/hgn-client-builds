@@ -1,0 +1,28 @@
+{
+	"schema": 1,
+	"clientVersion": "1.7.50-alpha.1",
+	"releaseName": "ALPHA-V1.7.50",
+	"builds": [
+		{
+			"minecraft": "1.21.4",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.7.50/jars/hgn-client-1.21.4-fabric.jar",
+			"size": 12519962,
+			"sha256": "7491941cbd67bf2e1dbbd26c7c09e4a2426e5d3615708f2c9c69dc46233d5088"
+		},
+		{
+			"minecraft": "1.21.4",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.7.50/jars/hgn-client-1.21.4-forge.jar",
+			"size": 12214515,
+			"sha256": "939e2234820d08c43583406e3c32be65a3120fea0138e242325133beab144e0c"
+		},
+		{
+			"minecraft": "1.21.4",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.7.50/jars/hgn-client-1.21.4-neoforge.jar",
+			"size": 12214920,
+			"sha256": "f080aaf851c7978e2daa27865b2e17d538073882f0dd5af51969a7bf5b9424ce"
+		}
+	]
+}
