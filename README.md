@@ -11,22 +11,23 @@ directory of the HGN Launcher repository.
 ## Layout
 
 ```
-manifest.json                        every available build, with checksums
-jars/hgn-client-<minecraft>-<loader>.jar
+releases/<release-name>/manifest.json
+releases/<release-name>/jars/hgn-client-<minecraft>-<loader>.jar
 ```
 
-`manifest.json`:
+Each release-scoped `manifest.json` binds the exact release identity and targets:
 
 ```json
 {
   "schema": 1,
-  "clientVersion": "1.0.0",
+  "clientVersion": "1.8.3-alpha.1",
+  "releaseName": "ALPHA-V1.8.3",
   "builds": [
     {
       "minecraft": "1.21.4",
       "loader": "fabric",
-      "file": "jars/hgn-client-1.21.4-fabric.jar",
-      "size": 403451,
+      "file": "releases/ALPHA-V1.8.3/jars/hgn-client-1.21.4-fabric.jar",
+      "size": 17243754,
       "sha256": "..."
     }
   ]
@@ -38,17 +39,15 @@ instance it cannot patch.
 
 ## Coverage
 
-The current Alpha publishes Minecraft 1.21.4 only, on Fabric, Forge, and
-NeoForge. This keeps testing on one game API while the new UI and supplied-model
-cosmetic renderer stabilize. Stable publication restores the Minecraft 1.21
-through 1.21.11 loader matrix (35 builds).
+The ALPHA-V1.8.3 client matrix covers Minecraft 1.21 through 1.21.11 on Fabric,
+Forge, and NeoForge: 35 exact version/loader combinations. The launcher package
+defines the supported targets; an individual server can still require a specific
+Minecraft version. UI appearance is subject to owner feedback during Alpha.
 
-Two gaps are upstream, not missing work:
+Excluded targets:
 
 - Forge publishes no build for 1.21.2.
-- Minecraft 26.x cannot be built yet: Mojang stopped obfuscating and stopped
-  publishing mappings at 26.1, and the current modding toolchain has no path for
-  an already-deobfuscated game.
+- Minecraft 26.x is not supported by this release's compatibility adapters.
 
 ## Updating
 
@@ -58,4 +57,11 @@ From the launcher repository, after building the current targets:
 node client/tools/collect-builds.mjs <path-to-this-repo>
 ```
 
-Then commit and push. Adding a Minecraft version needs no launcher release.
+Then commit and push the new release tree. Published manifests and jars are
+immutable. Adding a Minecraft target requires a new launcher/client release
+identity; never widen or overwrite an existing release tree. Historical root
+artifacts remain for older launchers.
+
+Launcher installers and checksum updater manifests are attached to the matching
+[public Alpha release](https://github.com/HorizonGate-Minecraft-Plugins/hgn-client-builds/releases).
+Downloads do not require a GitHub account or source-repository access.
