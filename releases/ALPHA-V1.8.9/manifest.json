@@ -1,0 +1,252 @@
+{
+	"schema": 1,
+	"clientVersion": "1.8.9-alpha.1",
+	"releaseName": "ALPHA-V1.8.9",
+	"builds": [
+		{
+			"minecraft": "1.21",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21-fabric.jar",
+			"size": 17868596,
+			"sha256": "0d9e3e15912541e0523ee5523f3304afaeb14fbbf867bc0aad95695b3de15a1d"
+		},
+		{
+			"minecraft": "1.21",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21-forge.jar",
+			"size": 17582784,
+			"sha256": "379bba31aec4a0bcaa95755feb8e75c9c1713af6c080a96482f97f2fcbab497e"
+		},
+		{
+			"minecraft": "1.21",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21-neoforge.jar",
+			"size": 17583191,
+			"sha256": "84859aa8c39f1ac9a7f9ddc20565875fc88747222a91a6e5e11aae3b3b8f49f5"
+		},
+		{
+			"minecraft": "1.21.1",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.1-fabric.jar",
+			"size": 17869873,
+			"sha256": "2ebd1cb997460a1fef2d40fa7da2d2232dd14402731ea3db01a5ae66322674f5"
+		},
+		{
+			"minecraft": "1.21.1",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.1-forge.jar",
+			"size": 17582789,
+			"sha256": "c8808c7d9d58d706669e1054c46cf90891c7848a0012948ed0edb98748ecc14f"
+		},
+		{
+			"minecraft": "1.21.1",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.1-neoforge.jar",
+			"size": 17583194,
+			"sha256": "ef0b0556deead09e37679906f3de6332ff00a357d9c286ad5b2f2aead3d1442f"
+		},
+		{
+			"minecraft": "1.21.10",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.10-fabric.jar",
+			"size": 17933323,
+			"sha256": "3476a67e566e70c1507f86ea753cdcc280a60f708fe5ecf5f309bb4d87ff80ac"
+		},
+		{
+			"minecraft": "1.21.10",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.10-forge.jar",
+			"size": 17584168,
+			"sha256": "00958043463c4dd37a1e686a9427fa651f994b913745b5ddb25a47081a6ad54b"
+		},
+		{
+			"minecraft": "1.21.10",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.10-neoforge.jar",
+			"size": 17584580,
+			"sha256": "2d2645245f6f181a59bcfadbd82b031a008be31af8a0c4b6c1fae9d2d3c33879"
+		},
+		{
+			"minecraft": "1.21.11",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.11-fabric.jar",
+			"size": 17939017,
+			"sha256": "e845ce63f785323de382a0a12ea3e40ebfb3f855ba80c3e9747ac306db8fdd77"
+		},
+		{
+			"minecraft": "1.21.11",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.11-forge.jar",
+			"size": 17584356,
+			"sha256": "3c85119c5e1ee72ad986ec9bcbba99e69a8abe83624616761308b83c9e8618d3"
+		},
+		{
+			"minecraft": "1.21.11",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.11-neoforge.jar",
+			"size": 17584767,
+			"sha256": "2dd1a952e14aa7ded707ba935fbc572d9dc2fabd462546ec540ad12c81c2601c"
+		},
+		{
+			"minecraft": "1.21.2",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.2-fabric.jar",
+			"size": 17872991,
+			"sha256": "89720c44990b2a17dc97eb6fc3a27c1986143bc0a5c408051fe0118ab59c8d75"
+		},
+		{
+			"minecraft": "1.21.2",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.2-neoforge.jar",
+			"size": 17586205,
+			"sha256": "8a850f755290b3d82d1f8640fe431525c20a196be6780c647163d28af3e11864"
+		},
+		{
+			"minecraft": "1.21.3",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.3-fabric.jar",
+			"size": 17873244,
+			"sha256": "eee3e46922d3bb1f5705b2e4d83082d2c2e4543bb106b3188ac34609b90c6701"
+		},
+		{
+			"minecraft": "1.21.3",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.3-forge.jar",
+			"size": 17585806,
+			"sha256": "57142162b87141ef898a2254125f9e14d5d09539003cec6c07a68dd59746a3c5"
+		},
+		{
+			"minecraft": "1.21.3",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.3-neoforge.jar",
+			"size": 17586213,
+			"sha256": "62372202d47e7555a63414766b15f2179fc8480ad03a4779f054f7f90bc3b9f5"
+		},
+		{
+			"minecraft": "1.21.4",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.4-fabric.jar",
+			"size": 17883736,
+			"sha256": "e3e8710f77b05b097d4a1e03137cd87b183a86f624aa2076340e6fefa1bd5c03"
+		},
+		{
+			"minecraft": "1.21.4",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.4-forge.jar",
+			"size": 17585811,
+			"sha256": "aeb55914a2d5e849e0942f09a37d36f375324a547181cc40ef7c2c7d6123dbb1"
+		},
+		{
+			"minecraft": "1.21.4",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.4-neoforge.jar",
+			"size": 17586216,
+			"sha256": "dbdffc741b90d98d5f797eacbb2886e07c83b27b0fc9fa43014d015bf0e3e10a"
+		},
+		{
+			"minecraft": "1.21.5",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.5-fabric.jar",
+			"size": 17880898,
+			"sha256": "4fb746910a4ac10d40070537582de472df088075bd5764541ee16bfa95ad46f6"
+		},
+		{
+			"minecraft": "1.21.5",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.5-forge.jar",
+			"size": 17585850,
+			"sha256": "997f94592df6d1ec0ad7d54170487c27e1cf63ac4a36bb1d6423bdeec7649a6d"
+		},
+		{
+			"minecraft": "1.21.5",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.5-neoforge.jar",
+			"size": 17586256,
+			"sha256": "59860da585c27d24dd52d2cc809fe175fe346720455f1cedcb146d1e75b1fc82"
+		},
+		{
+			"minecraft": "1.21.6",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.6-fabric.jar",
+			"size": 17875736,
+			"sha256": "0b4cb4a8fb900bd591e78afb18b3933969db021009ffb5fa2023f112ca2dfb33"
+		},
+		{
+			"minecraft": "1.21.6",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.6-forge.jar",
+			"size": 17580911,
+			"sha256": "21c065733bcba7adc866c611281dd18f5cb658f4585df28da8c02c1e27aad04a"
+		},
+		{
+			"minecraft": "1.21.6",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.6-neoforge.jar",
+			"size": 17581316,
+			"sha256": "59a3add66cda39332da7c2a0403e2acd57229f92f5c66f0454f893a4a513b1b1"
+		},
+		{
+			"minecraft": "1.21.7",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.7-fabric.jar",
+			"size": 17875721,
+			"sha256": "82df31ffeae81af20370dc39a6c6e5ce9e506609865ca5409b35e03e40c7545c"
+		},
+		{
+			"minecraft": "1.21.7",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.7-forge.jar",
+			"size": 17580912,
+			"sha256": "7dcacde0928946047393fb4a6066e1c62422e32fec616e192c5d5a94e93a1304"
+		},
+		{
+			"minecraft": "1.21.7",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.7-neoforge.jar",
+			"size": 17581323,
+			"sha256": "10598129230458668ce34d99af974dfb228f2dd2c25dc3c272718b8b0dc34aba"
+		},
+		{
+			"minecraft": "1.21.8",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.8-fabric.jar",
+			"size": 17898592,
+			"sha256": "91fccd37985310416a3e3e59e4ba360d1200a8315b5165fe0a917053486b7614"
+		},
+		{
+			"minecraft": "1.21.8",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.8-forge.jar",
+			"size": 17580905,
+			"sha256": "6a9b92eec4783d96dd1cd6379670771c49e2828c314f48e13d7046014bd77cd9"
+		},
+		{
+			"minecraft": "1.21.8",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.8-neoforge.jar",
+			"size": 17581315,
+			"sha256": "f7cd4c5e465d89340fa7485fdedf0159b3740647a649c92731e4079b40164515"
+		},
+		{
+			"minecraft": "1.21.9",
+			"loader": "fabric",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.9-fabric.jar",
+			"size": 17905838,
+			"sha256": "82db9040bafec7416a7c1e7f60ea958c72871edfe1b7b1b569a0627a61527081"
+		},
+		{
+			"minecraft": "1.21.9",
+			"loader": "forge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.9-forge.jar",
+			"size": 17584160,
+			"sha256": "11e3820b145fd6fd2f06d5a435fbf3eb39727b49ccb454806a6ded4ce7a53da7"
+		},
+		{
+			"minecraft": "1.21.9",
+			"loader": "neoforge",
+			"file": "releases/ALPHA-V1.8.9/jars/hgn-client-1.21.9-neoforge.jar",
+			"size": 17584570,
+			"sha256": "ba33096fccf86267b8025655ccddac5638b2870d1803fdc22a9c3071460b6dd5"
+		}
+	]
+}
