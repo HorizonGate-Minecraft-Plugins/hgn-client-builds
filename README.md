@@ -69,6 +69,26 @@ controls keep usable native-size actions:
 These renders do not prove an authenticated purchase/equip flow or that the
 separate membership backend and Velocity proxy are deployed.
 
+<details>
+<summary>Owner-supplied HGN Client design references (concepts, not product captures)</summary>
+
+These seven images show the intended visual direction for the PC client. They
+are reference mockups, **not** screenshots of a built release. Example FPS,
+latency, player counts, friends, cosmetics, currencies, mods and worlds in them
+must not be presented as live data or implemented features without verification.
+
+| Home | Singleplayer |
+| :---: | :---: |
+| <img src=".github/assets/screens/references/client-concept-home.png" alt="Owner concept for the HGN Client home menu" width="480" /> | <img src=".github/assets/screens/references/client-concept-worlds.png" alt="Owner concept for the HGN Client singleplayer library" width="480" /> |
+| Official network | Multiplayer browser |
+| <img src=".github/assets/screens/references/client-concept-network.png" alt="Owner concept for the official HorizonGate Network page" width="480" /> | <img src=".github/assets/screens/references/client-concept-multiplayer.png" alt="Owner concept for the multiplayer server browser" width="480" /> |
+| Mods | Settings |
+| <img src=".github/assets/screens/references/client-concept-mods.png" alt="Owner concept for in-client mod management" width="480" /> | <img src=".github/assets/screens/references/client-concept-settings.png" alt="Owner concept for compact client settings" width="480" /> |
+| Cosmetics | |
+| <img src=".github/assets/screens/references/client-concept-cosmetics.png" alt="Owner concept for the cosmetics collection" width="480" /> | |
+
+</details>
+
 ## Coverage
 
 The ALPHA-V1.8.15 client matrix covers Minecraft 1.21 through 1.21.11 on Fabric,
