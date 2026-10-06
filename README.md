@@ -13,6 +13,10 @@ combination.
 This repository holds build output and public release previews. The source
 lives in the `client/` directory of the HGN Launcher repository.
 
+Printable [A4 cape coloring sheets](.github/assets/printables/hgn-cape-a4-2pages.pdf)
+include outside/back and inside/front templates with full black borders. Print
+at A4 size and 100% scale.
+
 ## Layout
 
 ```
