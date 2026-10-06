@@ -1,0 +1,166 @@
+name: Publish verified ALPHA-V1.8.16 installer mirror
+
+# A trusted publisher must first compare ready.json with the private source
+# release's asset digests, then stage those exact bytes in the public repo.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.hgn-release-staging/ALPHA-V1.8.16/ready.json'
+
+concurrency:
+  group: hgn-alpha-1816-installer-publication
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ALPHA-V1.8.16
+      STAGING_DIR: .hgn-release-staging/ALPHA-V1.8.16
+    steps:
+      - name: Checkout exact public release inputs
+        uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            .hgn-release-staging/ALPHA-V1.8.16
+            releases/ALPHA-V1.8.16/manifest.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Verify source proof, installer, updater, and client matrix
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          proof="$STAGING_DIR/ready.json"
+          installer="$STAGING_DIR/HGN-Launcher-Setup.exe"
+          updater="$STAGING_DIR/hgn-launcher-update.json"
+          manifest="releases/$RELEASE_TAG/manifest.json"
+          test -s "$proof"
+          test -s "$installer"
+          test -s "$updater"
+          test -s "$manifest"
+
+          jq -e --arg tag "$RELEASE_TAG" '
+            (keys | sort) == ([
+              "sourceRepository", "sourceTag", "sourceCommit",
+              "installerSha256", "installerSize", "updaterSha256", "updaterSize"
+            ] | sort) and
+            .sourceRepository == "HorizonGate-Minecraft-Plugins/HGN-MC-Launcher" and
+            .sourceTag == $tag and
+            (.sourceCommit | test("^[0-9a-f]{40}$")) and
+            (.installerSha256 | test("^[0-9a-f]{64}$")) and
+            (.updaterSha256 | test("^[0-9a-f]{64}$")) and
+            (.installerSize | type) == "number" and
+            .installerSize > 0 and .installerSize <= 104857600 and
+            .installerSize == (.installerSize | floor) and
+            (.updaterSize | type) == "number" and
+            .updaterSize > 0 and .updaterSize <= 65536 and
+            .updaterSize == (.updaterSize | floor)
+          ' "$proof" > /dev/null
+
+          installer_sha="$(sha256sum "$installer" | cut -d' ' -f1)"
+          updater_sha="$(sha256sum "$updater" | cut -d' ' -f1)"
+          installer_size="$(stat -c '%s' "$installer")"
+          updater_size="$(stat -c '%s' "$updater")"
+          test "$installer_sha" = "$(jq -r '.installerSha256' "$proof")"
+          test "$updater_sha" = "$(jq -r '.updaterSha256' "$proof")"
+          test "$installer_size" = "$(jq -r '.installerSize' "$proof")"
+          test "$updater_size" = "$(jq -r '.updaterSize' "$proof")"
+
+          expected_url="https://github.com/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/HGN-Launcher-Setup.exe"
+          jq -e --arg tag "$RELEASE_TAG" --arg url "$expected_url" \
+            --arg sha "$installer_sha" --argjson size "$installer_size" '
+            (keys | sort) == ([
+              "version", "releaseName", "channel", "url", "sha256", "size"
+            ] | sort) and
+            .version == "1.8.16-alpha.1" and
+            .releaseName == $tag and .channel == "alpha" and
+            .url == $url and .sha256 == $sha and .size == $size
+          ' "$updater" > /dev/null
+
+          jq -e --arg tag "$RELEASE_TAG" '
+            .schema == 1 and .clientVersion == "1.8.16-alpha.1" and
+            .releaseName == $tag and
+            (.builds | length) == 35 and
+            ([.builds[].file] | unique | length) == 35 and
+            all(.builds[];
+              .file == ("releases/" + $tag + "/jars/hgn-client-" +
+                .minecraft + "-" + .loader + ".jar") and
+              (.size | type) == "number" and .size > 0 and
+              (.sha256 | test("^[0-9a-f]{64}$")))
+          ' "$manifest" > /dev/null
+          diff -u \
+            <(jq -r '.builds[].file' "$manifest" | sort) \
+            <(git ls-tree -r --name-only HEAD "releases/$RELEASE_TAG/jars" | sort)
+          echo 'Exact source proof, installer, updater, and 35 client paths verified.'
+
+      - name: Create draft with the exact staged assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG" > /dev/null 2>&1; then
+            echo 'Release already exists; refusing to replace its assets.' >&2
+            exit 1
+          fi
+          if gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG" > /dev/null 2>&1; then
+            echo 'Release tag already exists; refusing to retarget it.' >&2
+            exit 1
+          fi
+          source_commit="$(jq -r '.sourceCommit' "$STAGING_DIR/ready.json")"
+          gh release create "$RELEASE_TAG" \
+            "$STAGING_DIR/HGN-Launcher-Setup.exe" \
+            "$STAGING_DIR/hgn-launcher-update.json" \
+            --target "$GITHUB_SHA" --title "$RELEASE_TAG" \
+            --notes "HorizonGate Network 1.8.16-alpha.1 PC test build. Exact installer mirrored from private source tag $RELEASE_TAG at $source_commit. The 35 client JARs are in this repository's release-scoped manifest. This is an Alpha, not a finished PC or phone release." \
+            --prerelease --draft --latest=false
+
+      - name: Verify draft assets, then publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          proof="$STAGING_DIR/ready.json"
+          installer_sha="$(jq -r '.installerSha256' "$proof")"
+          installer_size="$(jq -r '.installerSize' "$proof")"
+          updater_sha="$(jq -r '.updaterSha256' "$proof")"
+          updater_size="$(jq -r '.updaterSize' "$proof")"
+          tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RELEASE_TAG")"
+          jq -e --arg sha "$GITHUB_SHA" '
+            .object.type == "commit" and .object.sha == $sha
+          ' <<< "$tag_ref" > /dev/null
+
+          release="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          jq -e --arg tag "$RELEASE_TAG" --arg installer_sha "$installer_sha" \
+            --argjson installer_size "$installer_size" --arg updater_sha "$updater_sha" \
+            --argjson updater_size "$updater_size" '
+            .tag_name == $tag and .name == $tag and
+            .draft == true and .prerelease == true and
+            (.assets | length) == 2 and
+            ([.assets[] | select(
+              .name == "HGN-Launcher-Setup.exe" and .state == "uploaded" and
+              .size == $installer_size and .digest == ("sha256:" + $installer_sha)
+            )] | length) == 1 and
+            ([.assets[] | select(
+              .name == "hgn-launcher-update.json" and .state == "uploaded" and
+              .size == $updater_size and .digest == ("sha256:" + $updater_sha)
+            )] | length) == 1
+          ' <<< "$release" > /dev/null
+
+          gh release edit "$RELEASE_TAG" --draft=false
+          published="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")"
+          jq -e --arg tag "$RELEASE_TAG" '
+            .tag_name == $tag and .name == $tag and
+            .draft == false and .prerelease == true and
+            (.assets | length) == 2
+          ' <<< "$published" > /dev/null
+          echo 'Verified ALPHA-V1.8.16 public mirror published.'
