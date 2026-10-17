@@ -1,0 +1,4 @@
+runtime/*.json -text
+runtime/*.jar -text
+runtime/*.zip -text
+source/*.zip -text
