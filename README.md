@@ -10,9 +10,9 @@ The HGN Launcher downloads the build matching an instance's loader and
 Minecraft version when the instance is created, so the launcher itself does
 not have to ship a jar for every combination.
 
-The client source is in [`client/`](client/). The launcher application is a
-separate private project; do not publish its source or installer in this
-client repository.
+The client source is in [`client/`](client/). The launcher application source
+is a separate private project. Launcher installer distribution is handled
+separately from the client source and jar releases.
 
 Printable [A4 cape coloring sheets](.github/assets/printables/hgn-cape-a4-2pages.pdf)
 include outside/back and inside/front templates with full black borders. Print
