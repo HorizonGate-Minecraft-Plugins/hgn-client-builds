@@ -95,6 +95,12 @@ must not be presented as live data or implemented features without verification.
 
 ## Coverage
 
+The staged ALPHA-V1.8.20 client set contains the updated HGN HUD for
+Minecraft 1.21.4 on Fabric, Forge, and NeoForge (three exact targets). Its
+public jar excludes entitlement-only Cosmetics textures and models; those are
+delivered separately after account authorization. This build verification does
+not by itself prove an authenticated multiplayer launch.
+
 The ALPHA-V1.8.15 client matrix covers Minecraft 1.21 through 1.21.11 on Fabric,
 Forge, and NeoForge: 35 exact version/loader combinations. The launcher package
 defines the supported targets; an individual server can still require a specific
