@@ -1,0 +1,562 @@
+plugins {
+	id 'dev.architectury.loom' version '1.17.491' apply false
+}
+
+def matrix = new Properties()
+file('versions.properties').withInputStream { matrix.load(it) }
+
+def supported = matrix.getProperty('mc.list').split(',').collect { it.trim() }
+def selected = (project.findProperty('mc') ?: project.default_mc).toString()
+
+if (!supported.contains(selected)) {
+	throw new GradleException("Unsupported Minecraft version '${selected}'. Supported: ${supported.join(', ')}")
+}
+
+// The client is shipped with the launcher and reports its version in-game, so
+// it takes the launcher's rather than carrying one of its own that drifts.
+def launcherPackage = file('../apps/app-frontend/package.json')
+def launcherMetadata = launcherPackage.exists()
+	? new groovy.json.JsonSlurper().parse(launcherPackage)
+	: null
+def clientVersion = (launcherMetadata?.version ?: project.mod_version).toString()
+def releaseName = (launcherMetadata?.hgnReleaseName ?: project.hgn_release_name)?.toString()?.trim()
+if (!releaseName) {
+	throw new GradleException('apps/app-frontend/package.json must define hgnReleaseName')
+}
+def alphaVersion = clientVersion =~ /^(\d+\.\d+\.\d+)-alpha\.1$/
+def alphaBuild = alphaVersion.matches()
+def betaVersion = clientVersion =~ /^(\d+\.\d+\.\d+)-beta\.(0|[1-9]\d*)$/
+def betaBuild = betaVersion.matches()
+if (clientVersion.contains('-alpha') && !alphaBuild) {
+	throw new GradleException("HGN Alpha machine version '${clientVersion}' must use X.Y.Z-alpha.1")
+}
+if (clientVersion.contains('-beta') && !betaBuild) {
+	throw new GradleException("HGN Beta machine version '${clientVersion}' must use X.Y.Z-beta.N")
+}
+if (alphaBuild) {
+	def expectedReleaseName = "ALPHA-V${alphaVersion.group(1)}"
+	if (releaseName != expectedReleaseName) {
+		throw new GradleException("HGN release name '${releaseName}' does not match '${clientVersion}'; expected '${expectedReleaseName}'")
+	}
+}
+if (betaBuild) {
+	def expectedReleaseName = "v${clientVersion}"
+	if (releaseName != expectedReleaseName) {
+		throw new GradleException("HGN release name '${releaseName}' does not match '${clientVersion}'; expected '${expectedReleaseName}'")
+	}
+}
+
+ext {
+	mcVersion = selected
+	hgnVersion = clientVersion
+	hgnReleaseName = releaseName
+	apiGen = matrix.getProperty("${selected}.gen")
+	javaVersion = (matrix.getProperty("${selected}.java") ?: '21') as int
+	fabricApiVersion = matrix.getProperty("${selected}.fabric_api")?.trim()
+	forgeVersion = matrix.getProperty("${selected}.forge")?.trim()
+	neoforgeVersion = matrix.getProperty("${selected}.neoforge")?.trim()
+}
+
+tasks.register('verifyVanillaInventoryContract') {
+	group = 'verification'
+	description = 'Keep native inventory controls and container layouts unchanged.'
+	doLast {
+		def injection = file('common/src/main/java/online/horizongate/hgn/mixin/HgnInventoryCosmeticsMixin.java')
+		if (injection.exists()) {
+			throw new GradleException('The vanilla inventory must not gain a Cosmetics control injection')
+		}
+		def mixins = new groovy.json.JsonSlurper().parse(file('common/src/main/resources/hgn-client.mixins.json'))
+		if (mixins.client.any { it in ['HgnInventoryCosmeticsMixin', 'HgnContainerScreenMixin'] }) {
+			throw new GradleException('The vanilla inventory or container replacement mixin is registered')
+		}
+		def config = file('common/src/main/java/online/horizongate/hgn/HgnConfig.java').text
+		def inactiveLayout = config =~ /public boolean containerLayoutsEnabled\(\)\s*\{\s*return false;\s*\}/
+		if (!inactiveLayout.find()) {
+			throw new GradleException('Vanilla container layout replacement is no longer disabled')
+		}
+		['HgnDashboardScreen.java', 'HgnPauseScreen.java'].each { menu ->
+			def source = file("common/src/main/java/online/horizongate/hgn/screen/${menu}").text
+			if (!source.contains('new HgnCosmeticsScreen(this)')) {
+				throw new GradleException("Cosmetics is no longer reachable from ${menu}")
+			}
+		}
+	}
+}
+
+subprojects {
+	apply plugin: 'java'
+	apply plugin: 'dev.architectury.loom'
+
+	version = "${rootProject.ext.hgnVersion}+${rootProject.ext.mcVersion}"
+	group = rootProject.maven_group
+
+	base {
+		archivesName = "${rootProject.archives_base_name}-${rootProject.ext.mcVersion}-${project.name}"
+	}
+
+	repositories {
+		maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+		maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
+		maven { name = 'MinecraftForge'; url = 'https://maven.minecraftforge.net/' }
+		mavenCentral()
+	}
+
+	loom {
+		silentMojangMappingsLicense()
+	}
+
+	dependencies {
+		minecraft "com.mojang:minecraft:${rootProject.ext.mcVersion}"
+		mappings loom.officialMojangMappings()
+	}
+
+	// Every loader jar compiles the same shared sources plus the rendering shim
+	// for its Minecraft API generation. Keeping the shim as the only version-
+	// specific file is what makes 16 Minecraft versions tractable.
+	sourceSets.main.java.srcDirs += [
+		rootProject.file('common/src/main/java'),
+		rootProject.file("common/src/compat/${rootProject.ext.apiGen}/java"),
+		rootProject.file("common/src/compat/input/${rootProject.ext.apiGen in ['g1219', 'g12111'] ? 'modern' : 'legacy'}/java"),
+		rootProject.file("common/src/compat/worldrow/${rootProject.ext.apiGen in ['g1219', 'g12111'] ? 'modern' : 'legacy'}/java"),
+		rootProject.file("common/src/compat/container/${rootProject.ext.apiGen == 'g12111' ? 'modern' : 'legacy'}/java"),
+	]
+	if (rootProject.ext.apiGen == 'g1212') {
+		def scrollGen = rootProject.ext.mcVersion in ['1.21.2', '1.21.3'] ? 'legacy' : 'modern'
+		sourceSets.main.java.srcDirs += rootProject.file("common/src/compat/scroll/${scrollGen}/java")
+	}
+	def equipmentGen = matrix.getProperty("${rootProject.ext.mcVersion}.equipment_gen")?.trim()
+	if (equipmentGen) {
+		sourceSets.main.java.srcDirs +=
+			rootProject.file("common/src/compat/equipment/${equipmentGen}/java")
+	}
+	def itemRenderGen = matrix.getProperty("${rootProject.ext.mcVersion}.item_render_gen")?.trim()
+	if (itemRenderGen) {
+		sourceSets.main.java.srcDirs +=
+			rootProject.file("common/src/compat/item_render/${itemRenderGen}/java")
+	}
+	sourceSets.main.resources.srcDirs += rootProject.file('common/src/main/resources')
+	def inventoryGen = rootProject.ext.mcVersion in ['1.21', '1.21.1', '1.21.2', '1.21.3', '1.21.4'] ? 'legacy' : 'equipment'
+	sourceSets.main.java.srcDirs += rootProject.file("common/src/compat/inventory/${inventoryGen}/java")
+	tasks.named('check') { dependsOn rootProject.tasks.named('verifyVanillaInventoryContract') }
+
+	sourceSets.create('layoutTest') {
+		java.srcDir rootProject.file('tools/test')
+		compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+		runtimeClasspath += output + compileClasspath
+	}
+	tasks.register('verifyContainerLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnFurnaceLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyContainerLayouts') }
+	tasks.register('verifyCosmeticsSnapshot', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnCosmeticsSnapshotTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyCosmeticsSnapshot') }
+	tasks.register('verifyCosmeticsPageRefresh', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'online.horizongate.hgn.cosmetics.HgnCosmeticsPageRefreshTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyCosmeticsPageRefresh') }
+	tasks.register('verifyCosmeticsLayout', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnCosmeticsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyCosmeticsLayout') }
+	tasks.register('verifyMemberPackStatus', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'online.horizongate.hgn.cosmetics.HgnMemberPackStatusTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyMemberPackStatus') }
+	tasks.register('verifyMembershipLanAddress', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'online.horizongate.hgn.cosmetics.HgnMembershipLanAddressTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyMembershipLanAddress') }
+	tasks.register('verifyGameplayHudLayout', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnGameplayHudLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyGameplayHudLayout') }
+	tasks.register('verifyDungeonFreshness', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'online.horizongate.hgn.net.HgnDungeonFreshnessTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyDungeonFreshness') }
+	tasks.register('verifyBossProtocol', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'online.horizongate.hgn.net.HgnBossProtocolSmokeCheck'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyBossProtocol') }
+	tasks.register('verifyClickRate', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnClickRateTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyClickRate') }
+	tasks.register('verifyEntityBudget', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnEntityBudgetPolicyTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyEntityBudget') }
+	tasks.register('verifyCompactDashboard', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnCompactDashboardLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyCompactDashboard') }
+	tasks.register('verifyReferenceShell', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnReferenceShellLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyReferenceShell') }
+	tasks.register('verifyReferenceSettings', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnReferenceSettingsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyReferenceSettings') }
+	tasks.register('verifyPauseCompactLayout', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnPauseCompactLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyPauseCompactLayout') }
+	tasks.register('verifyMultiplayerLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnMultiplayerLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyMultiplayerLayouts') }
+	tasks.register('verifyDoubleClick', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnDoubleClickTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyDoubleClick') }
+	tasks.register('verifySettingsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnSettingsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifySettingsLayouts') }
+	tasks.register('verifyWorldSelectionLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnWorldSelectionLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyWorldSelectionLayouts') }
+	tasks.register('verifyLanguageLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnLanguageLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyLanguageLayouts') }
+	tasks.register('verifyFontOptionsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnFontOptionsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyFontOptionsLayouts') }
+	tasks.register('verifyBundledFontGlyphs', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnBundledFontTest'
+		args rootProject.file('common/src/main/resources/assets/hgn-client/font/inter_regular.ttf').absolutePath,
+			rootProject.file('common/src/main/resources/assets/hgn-client/font/rajdhani_semibold.ttf').absolutePath
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyBundledFontGlyphs') }
+	tasks.register('verifySoundOptionsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnSoundOptionsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifySoundOptionsLayouts') }
+	tasks.register('verifyControlsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnControlsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyControlsLayouts') }
+	tasks.register('verifyMouseSettingsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnMouseSettingsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyMouseSettingsLayouts') }
+	tasks.register('verifyKeyBindsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnKeyBindsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyKeyBindsLayouts') }
+	tasks.register('verifySkinCustomizationLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnSkinCustomizationLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifySkinCustomizationLayouts') }
+	tasks.register('verifyChatOptionsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnChatOptionsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyChatOptionsLayouts') }
+	tasks.register('verifyVideoSettingsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnVideoSettingsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyVideoSettingsLayouts') }
+	tasks.register('verifyAccessibilityOptionsLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnAccessibilityOptionsLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyAccessibilityOptionsLayouts') }
+	tasks.register('verifyEditWorldLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnEditWorldLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyEditWorldLayouts') }
+	tasks.register('verifyCreateWorldLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnCreateWorldLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyCreateWorldLayouts') }
+
+	// A loader's own API can also move between Minecraft versions (NeoForge
+	// relocated its client-side packet sender in 21.7), so each loader may carry
+	// its own generation directory too.
+	def loaderGen = matrix.getProperty("${rootProject.ext.mcVersion}.${project.name}_gen")?.trim()
+	if (loaderGen) {
+		sourceSets.main.java.srcDirs += file("src/compat/${loaderGen}/java")
+	}
+
+	tasks.register('verifyUpdateDestinationReports', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnUpdateDestinationTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyUpdateDestinationReports') }
+	tasks.register('verifyUpdateOffers', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnUpdateOfferTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyUpdateOffers') }
+	tasks.register('verifyUpdateTransactions', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnUpdateTransactionTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyUpdateTransactions') }
+	tasks.register('verifyPackSelectionLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnPackSelectionLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyPackSelectionLayouts') }
+	tasks.register('verifyDisconnectedLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnDisconnectedLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyDisconnectedLayouts') }
+	tasks.register('verifyConnectionLayouts', JavaExec) {
+		group = 'verification'
+		dependsOn tasks.named('layoutTestClasses')
+		classpath = sourceSets.layoutTest.runtimeClasspath
+		mainClass = 'HgnConnectionLayoutTest'
+	}
+	tasks.named('check') { dependsOn tasks.named('verifyConnectionLayouts') }
+
+	def buildInfoDir = layout.buildDirectory.dir('generated/hgn')
+	def generateBuildInfo = tasks.register('generateHgnBuildInfo') {
+		def target = buildInfoDir
+		def mc = rootProject.ext.mcVersion
+		def loaderName = project.name
+		def clientVer = rootProject.ext.hgnVersion
+		def release = rootProject.ext.hgnReleaseName
+		inputs.property 'mcVersion', mc
+		inputs.property 'loader', loaderName
+		inputs.property 'clientVersion', clientVer
+		inputs.property 'releaseName', release
+		outputs.dir target
+		doLast {
+			def pkg = target.get().dir('online/horizongate/hgn').asFile
+			pkg.mkdirs()
+			new File(pkg, 'HgnBuild.java').text = """package online.horizongate.hgn;
+
+/** Generated at build time — do not edit. */
+public final class HgnBuild {
+	public static final String CLIENT_VERSION = "${clientVer}";
+	public static final String RELEASE_NAME = "${release}";
+	public static final String MINECRAFT_VERSION = "${mc}";
+	public static final String LOADER = "${loaderName}";
+
+	private HgnBuild() {
+	}
+}
+"""
+		}
+	}
+	sourceSets.main.java.srcDir generateBuildInfo
+
+	processResources {
+		// Entitlement-only model and texture assets belong in the private member
+		// pack, never in a publicly downloadable client jar.
+		exclude { details ->
+			details.path.startsWith('assets/hgn_cosmetics/models/') ||
+				details.path.startsWith('assets/hgn_cosmetics/textures/')
+		}
+		inputs.property 'version', project.version
+		inputs.property 'mcVersion', rootProject.ext.mcVersion
+		filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml']) {
+			expand 'version': project.version, 'mcVersion': rootProject.ext.mcVersion
+		}
+	}
+
+	tasks.register('verifyBundledResources') {
+		group = 'verification'
+		dependsOn tasks.named('remapJar')
+		doLast {
+			def assetRoot = rootProject.file('common/src/main/resources/assets/hgn-client')
+			def assets = rootProject.fileTree(assetRoot).files
+			if (assets.isEmpty()) throw new GradleException('No HGN client assets found')
+			def artifact = tasks.named('remapJar').get().archiveFile.get().asFile
+			new java.util.zip.ZipFile(artifact).withCloseable { jar ->
+				def privateAssets = jar.entries().findAll { entry ->
+					entry.name.startsWith('assets/hgn_cosmetics/models/') ||
+						entry.name.startsWith('assets/hgn_cosmetics/textures/')
+				}
+				if (!privateAssets.isEmpty()) {
+					throw new GradleException("${artifact.name} contains private Cosmetics assets")
+				}
+				assets.each { source ->
+					def relative = assetRoot.toPath().relativize(source.toPath()).toString().replace('\\', '/')
+					def path = "assets/hgn-client/${relative}"
+					def entry = jar.getEntry(path)
+					if (entry == null || entry.size <= 0) {
+						throw new GradleException("${artifact.name} is missing HGN asset ${path}")
+					}
+					if (relative.endsWith('.png')) {
+						jar.getInputStream(entry).withCloseable { input ->
+							def image = javax.imageio.ImageIO.read(input)
+							if (image == null || image.width <= 0 || image.height <= 0) {
+								throw new GradleException("${artifact.name} has an invalid HGN PNG ${path}")
+							}
+						}
+					} else if (relative.endsWith('.ttf')) {
+						jar.getInputStream(entry).withCloseable { input ->
+							if (new java.io.DataInputStream(input).readInt() != 0x00010000) {
+								throw new GradleException("${artifact.name} has an invalid HGN font ${path}")
+							}
+						}
+					}
+				}
+				def fontEntry = jar.getEntry('assets/hgn-client/font/ui.json')
+				if (fontEntry == null) throw new GradleException("${artifact.name} is missing the HGN UI font definition")
+				def fontDefinition = jar.getInputStream(fontEntry).withCloseable { input ->
+					new groovy.json.JsonSlurper().parse(input)
+				}
+				if (!fontDefinition.providers.any {
+					it.type == 'ttf' && it.file == 'hgn-client:inter_regular.ttf'
+				}) {
+					throw new GradleException("${artifact.name} does not select the bundled HGN UI font")
+				}
+				def headingEntry = jar.getEntry('assets/hgn-client/font/heading.json')
+				if (headingEntry == null) throw new GradleException("${artifact.name} is missing the HGN heading font definition")
+				def headingDefinition = jar.getInputStream(headingEntry).withCloseable { input ->
+					new groovy.json.JsonSlurper().parse(input)
+				}
+				if (!headingDefinition.providers.any {
+					it.type == 'ttf' && it.file == 'hgn-client:rajdhani_semibold.ttf'
+				}) {
+					throw new GradleException("${artifact.name} does not select the bundled HGN heading font")
+				}
+				if (project.name == 'fabric' && rootProject.ext.apiGen in ['g1219', 'g12111', 'g2601']) {
+					def loaderPresent = jar.entries().any {
+						it.name.startsWith('META-INF/jars/fabric-resource-loader-v1-') && it.name.endsWith('.jar')
+					}
+					if (!loaderPresent) {
+						throw new GradleException("${artifact.name} cannot load bundled assets without Fabric Resource Loader v1")
+					}
+				}
+			}
+		}
+	}
+	tasks.named('build') { dependsOn tasks.named('verifyBundledResources') }
+
+	// Minecraft 1.21.x runs on Java 21; the 26.x line requires Java 25.
+	tasks.withType(JavaCompile).configureEach {
+		it.options.encoding = 'UTF-8'
+		it.options.release = rootProject.ext.javaVersion
+	}
+
+	java {
+		toolchain.languageVersion = JavaLanguageVersion.of(rootProject.ext.javaVersion)
+	}
+
+	// Lets a visual check jump straight to one screen: -Pdevscreen=multiplayer
+	// (also join_hub / join_vinksmp). Loom's run tasks are plain JavaExec.
+	if (project.hasProperty('devscreen')) {
+		tasks.withType(JavaExec).configureEach {
+			systemProperty 'hgn.devscreen', project.property('devscreen')
+			if (project.property('devscreen') == 'container-smoke') {
+				systemProperty 'fabric.noGui', 'true'
+			}
+		}
+	}
+}

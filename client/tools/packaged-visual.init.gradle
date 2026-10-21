@@ -1,0 +1,168 @@
+gradle.afterProject { project, state ->
+	if (project.path != ':fabric') return
+	if (state.failure != null) return
+
+	def loom = project.plugins.findPlugin('dev.architectury.loom')
+	if (loom == null) throw new GradleException('Packaged visual check requires Architectury Loom')
+	def productionTask = loom.class.classLoader.loadClass(
+		'net.fabricmc.loom.task.prod.ClientProductionRunTask')
+
+	project.tasks.register('runPackagedVisualClient', productionTask) { task ->
+		task.group = 'verification'
+		task.description = 'Launches the final remapped HGN jar in a production Fabric client'
+		task.outputs.upToDateWhen { false }
+		task.dependsOn project.tasks.named('verifyBundledResources')
+		def sodiumJarProperty = project.findProperty('hgnPackagedSodiumJar')
+		def sodiumJar = sodiumJarProperty == null ? null : project.file(sodiumJarProperty)
+		def sodiumVisual = project.findProperty('hgnPackagedSodiumVisual') == 'true'
+		if (sodiumVisual && sodiumJar == null) {
+			throw new GradleException('Packaged Sodium visual check requires the pinned Sodium jar')
+		}
+		def resourceSmoke = project.findProperty('hgnPackagedResourceSmoke') == 'true'
+			|| (sodiumJar != null && !sodiumVisual)
+		def visualCapture = project.findProperty('hgnPackagedVisualCapture') == 'true'
+		if (visualCapture && System.getenv('GITHUB_ACTIONS') != 'true') {
+			throw new GradleException('Packaged visual capture requires GITHUB_ACTIONS=true to enable its test-only client hook')
+		}
+		def hotbarCapture = project.findProperty('hgnPackagedHotbarCapture') == 'true'
+		if (visualCapture && (resourceSmoke || sodiumVisual || hotbarCapture)
+			|| hotbarCapture && (resourceSmoke || sodiumVisual || sodiumJar != null)) {
+			throw new GradleException('Packaged capture modes must use separate production runs')
+		}
+		task.runDir = project.layout.projectDirectory.dir(hotbarCapture ? 'run-packaged-hotbar'
+			: sodiumVisual ? 'run-packaged-sodium-visual'
+			: sodiumJar != null ? 'run-packaged-sodium'
+			: resourceSmoke ? 'run-packaged-smoke' : 'run-packaged-visual')
+		def externalVisualRunDir = project.findProperty('hgnPackagedVisualRunDir')
+		def resumeVisualProperty = project.findProperty('hgnPackagedVisualResume')
+		if (resumeVisualProperty != null && resumeVisualProperty.toString() != 'true') {
+			throw new GradleException('Packaged visual resume must be explicitly true')
+		}
+		def resumeVisual = resumeVisualProperty != null
+		if (resumeVisual && (!visualCapture || externalVisualRunDir == null)) {
+			throw new GradleException('Packaged visual resume requires visual capture and the fixed external run directory')
+		}
+		if (externalVisualRunDir != null) {
+			if (!visualCapture) {
+				throw new GradleException('External packaged run directory is only allowed for visual capture')
+			}
+			def requiredLiteral = 'C:\\hgn-pc-final-visual-20261012\\run-packaged-visual'
+			if (externalVisualRunDir.toString() != requiredLiteral) {
+				throw new GradleException('External packaged visual run directory must match the approved C: path')
+			}
+			def requested = java.nio.file.Path.of(requiredLiteral).toAbsolutePath().normalize()
+			def sourceRoot = project.rootProject.rootDir.toPath().toRealPath().getParent()
+			if (!requested.isAbsolute() || requested.startsWith(sourceRoot)
+				|| sourceRoot.startsWith(requested)
+				|| requested.getFileName().toString() != 'run-packaged-visual') {
+				throw new GradleException('External packaged visual run directory overlaps source or is invalid')
+			}
+			def noFollow = java.nio.file.LinkOption.NOFOLLOW_LINKS
+			def leafExists = java.nio.file.Files.exists(requested, noFollow)
+			if (leafExists && !resumeVisual) {
+				throw new GradleException('External packaged visual run directory must not already exist')
+			}
+			if (!leafExists && resumeVisual) {
+				throw new GradleException('Packaged visual resume requires the existing disposable run directory')
+			}
+			for (def ancestor = requested.getParent(); ancestor != null; ancestor = ancestor.getParent()) {
+				if (!java.nio.file.Files.isDirectory(ancestor, noFollow)
+					|| java.nio.file.Files.isSymbolicLink(ancestor)
+					|| java.nio.file.Files.readAttributes(ancestor,
+						java.nio.file.attribute.BasicFileAttributes, noFollow).isOther()
+					|| ancestor.toRealPath() != ancestor.toRealPath(noFollow)) {
+					throw new GradleException('External packaged visual run directory has an unsafe ancestor')
+				}
+			}
+			if (resumeVisual) {
+				def files = java.nio.file.Files
+				def attrs = files.readAttributes(requested,
+					java.nio.file.attribute.BasicFileAttributes, noFollow)
+				if (!attrs.isDirectory() || attrs.isOther() || files.isSymbolicLink(requested)
+					|| requested.toRealPath() != requested.toRealPath(noFollow)) {
+					throw new GradleException('Packaged visual resume target is not an ordinary directory')
+				}
+				def marker = requested.resolve('.hgn-packaged-visual-resume-owner')
+				def options = requested.resolve('options.txt')
+				def command = requested.resolve('visual-capture-command.txt')
+				def saves = requested.resolve('saves')
+				for (def requiredFile in [marker, options, command]) {
+					if (!files.isRegularFile(requiredFile, noFollow)
+						|| files.isSymbolicLink(requiredFile)) {
+						throw new GradleException('Packaged visual resume is missing a regular fixture file')
+					}
+				}
+				if (files.readString(marker).trim()
+					!= 'HGN_PACKAGED_VISUAL_DISPOSABLE_20261012_D2CB99FA_5AE0_48B0_A724_8491B14708BF') {
+					throw new GradleException('Packaged visual resume ownership marker does not match')
+				}
+				def guiScaleLines = files.readAllLines(options).findAll { it.startsWith('guiScale:') }
+				if (guiScaleLines != ['guiScale:2'] || files.readString(command).trim().isEmpty()) {
+					throw new GradleException('Packaged visual resume requires GUI Scale 2 and a capture command')
+				}
+				if (!files.isDirectory(saves, noFollow) || files.isSymbolicLink(saves)) {
+					throw new GradleException('Packaged visual resume requires an ordinary saves directory')
+				}
+				files.list(saves).withCloseable { stream ->
+					if (stream.findAny().isPresent()) {
+						throw new GradleException('Packaged visual resume cannot use a directory with saved worlds')
+					}
+				}
+				files.walk(requested).withCloseable { stream ->
+					stream.forEach { entry ->
+						def entryAttrs = files.readAttributes(entry,
+							java.nio.file.attribute.BasicFileAttributes, noFollow)
+						if (entryAttrs.isSymbolicLink() || entryAttrs.isOther()
+							|| entry.toRealPath() != entry.toRealPath(noFollow)) {
+							throw new GradleException('Packaged visual resume contains a link or reparse point')
+						}
+						def name = entry.getFileName().toString().toLowerCase(java.util.Locale.ROOT)
+						if (entryAttrs.isRegularFile()
+							&& name.matches('.*(account|auth|session|token|credential|profile|usercache|oauth|login|identity|secret|user\\.(json|dat|txt)).*')) {
+							throw new GradleException('Packaged visual resume cannot use account data')
+						}
+					}
+				}
+			}
+			task.runDir = project.layout.dir(project.provider { requested.toFile() }).get()
+			project.logger.lifecycle('HGN_PACKAGED_VISUAL_RUN_DIR=' + requested)
+		}
+		task.useXVFB = false
+		if (sodiumJar != null) task.mods.from(project.files(sodiumJar))
+		if (sodiumVisual) {
+			task.jvmArgs.add('-Dhgn.devscreen=video-runtime-smoke')
+			task.jvmArgs.add('-Dhgn.smokeVideoRuntime=true')
+		}
+		if (visualCapture) {
+			task.jvmArgs.add('-Xmx2G')
+			task.programArgs.addAll(['--width', '1280', '--height', '720'])
+			task.jvmArgs.add('-Dhgn.devscreen=visual-capture')
+			task.jvmArgs.add('-Dhgn.smokeVisualCapture=true')
+			task.jvmArgs.add('-Dhgn.smokeWorldFixture=true')
+		}
+		if (hotbarCapture) {
+			task.jvmArgs.add('-Dhgn.devscreen=hotbar-capture')
+			task.jvmArgs.add('-Dhgn.smokeHotbarCapture=true')
+		}
+		if (resourceSmoke) {
+			task.jvmArgs.add('-Dhgn.devscreen=container-smoke')
+			task.jvmArgs.add('-Dfabric.noGui=true')
+			if (sodiumJar != null) task.jvmArgs.add('-Dhgn.smokeWorldFixture=true')
+		}
+		task.doFirst {
+			def artifact = project.tasks.named('remapJar').get().archiveFile.get().asFile
+			def matches = task.mods.files.findAll { it.canonicalFile == artifact.canonicalFile }
+			if (matches.size() != 1) {
+				throw new GradleException('Production client must launch exactly one final HGN jar')
+			}
+			if (sodiumJar != null) {
+				if (!sodiumJar.isFile()
+					|| task.mods.files.count { it.canonicalFile == sodiumJar.canonicalFile } != 1) {
+					throw new GradleException('Production client must launch exactly one pinned Sodium jar')
+				}
+				project.logger.lifecycle('HGN_PACKAGED_SODIUM_JAR=' + sodiumJar.absolutePath)
+			}
+			project.logger.lifecycle('HGN_PACKAGED_JAR=' + artifact.absolutePath)
+		}
+	}
+}

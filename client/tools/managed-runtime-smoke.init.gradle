@@ -1,0 +1,127 @@
+gradle.afterProject { project, state ->
+	if (project.path != ':fabric' || state.failure != null) return
+
+	def loom = project.plugins.findPlugin('dev.architectury.loom')
+	if (loom == null) throw new GradleException('Managed runtime smoke requires Architectury Loom')
+	def productionTask = loom.class.classLoader.loadClass(
+		'net.fabricmc.loom.task.prod.ClientProductionRunTask')
+	def fixtureProperty = project.findProperty('hgnManagedSmokeDir')
+	if (fixtureProperty == null) {
+		throw new GradleException('Managed runtime smoke needs -PhgnManagedSmokeDir=<absolute disposable directory>')
+	}
+	def fixture = new File(fixtureProperty.toString())
+	def gameDir = new File(fixture, 'game')
+	def modulesDir = new File(fixture, 'modules')
+	def moduleNames = [
+		'fabric-api-base-0.4.54+b47eab6b04.jar',
+		'fabric-networking-api-v1-4.4.0+db5e668204.jar',
+		'fabric-resource-loader-v0-3.1.1+360374ac04.jar'
+	]
+	def moduleHashes = [
+		'61d89dbddd8921eb9b53c485119a62dd56b23e55331cb6f91d28998623073746',
+		'6dd8ca3be92cb2bdefc854fbd2a2164b086667d1e893317e64c02c3640fe7522',
+		'1ad68c08d45e337e1a76edcd5b8a421704b31ec45942f9c5f5a9754dcbaee2d8'
+	]
+	def sodium = project.findProperty('hgnManagedSodium') == 'true'
+	def sodiumName = 'sodium-fabric-0.6.13+mc1.21.4.jar'
+	def sodiumHash = '2c72ca2ddfd27e29ff6c24fccdf6f3d80857bd1014c707017f96cb4a424f94918e53ba21d85f22e3c9171803f8d2c12c99ae857d38d8e85546cc65960b95a2f1'
+	def widthText = project.findProperty('hgnManagedSmokeWidth')?.toString()
+	def heightText = project.findProperty('hgnManagedSmokeHeight')?.toString()
+	if ((widthText == null) != (heightText == null)
+		|| widthText != null && (!(widthText ==~ /[0-9]{3,4}/)
+			|| !(heightText ==~ /[0-9]{3,4}/))) {
+		throw new GradleException('Managed smoke width and height must be supplied together as pixel integers')
+	}
+	def smokeWidth = widthText == null ? 1280 : Integer.parseInt(widthText)
+	def smokeHeight = heightText == null ? 720 : Integer.parseInt(heightText)
+	if (smokeWidth < 640 || smokeWidth > 2560 || smokeHeight < 360 || smokeHeight > 1440) {
+		throw new GradleException('Managed smoke viewport is outside the supported 640x360 to 2560x1440 range')
+	}
+	def visualRequest = ''
+	def startedAt = 0L
+	project.tasks.register('runManagedPrototypeClient', productionTask) { task ->
+		task.group = 'verification'
+		task.description = 'Launches the non-shipping HGN agent without an HGN Fabric mod'
+		task.outputs.upToDateWhen { false }
+		task.dependsOn project.tasks.named('proveHgnRuntimePair')
+		task.runDir = project.layout.dir(project.provider { gameDir }).get()
+		task.useXVFB = false
+		task.mods.setFrom(project.files((moduleNames + (sodium ? [sodiumName] : []))
+			.collect { new File(modulesDir, it) }))
+		task.jvmArgs.add('-Xmx2G')
+		task.jvmArgs.add('-Dhgn.devscreen=visual-capture')
+		task.jvmArgs.add('-Dhgn.smokeVisualCapture=true')
+		task.jvmArgs.add('-Dhgn.smokeWorldFixture=true')
+		task.jvmArgs.add('-javaagent:' + project.tasks.named('hgnRuntimePrototypeJar')
+			.get().archiveFile.get().asFile.absolutePath)
+		task.programArgs.addAll(['--width', smokeWidth.toString(), '--height', smokeHeight.toString()])
+		task.doFirst {
+			if (System.getenv('GITHUB_ACTIONS') != 'true') {
+				throw new GradleException('Managed visual smoke requires the local test-only capture hook')
+			}
+			def sourceRoot = project.rootProject.rootDir.canonicalFile.toPath()
+			def target = fixture.canonicalFile.toPath()
+			def marker = new File(gameDir, '.hgn-managed-smoke-owner')
+			if (!fixture.isAbsolute() || target.startsWith(sourceRoot)
+				|| sourceRoot.startsWith(target) || fixture.toPath().toAbsolutePath().normalize() != target
+				|| !gameDir.isDirectory() || !marker.isFile()
+				|| marker.text.trim() != 'HGN_MANAGED_SMOKE_DISPOSABLE_20261013') {
+				throw new GradleException('Managed smoke fixture is missing or contains game data')
+			}
+			def command = new File(gameDir, 'visual-capture-command.txt')
+			if (!command.isFile() || command.length() > 64) {
+				throw new GradleException('Managed smoke needs a short visual-capture command')
+			}
+			visualRequest = command.getText('US-ASCII').trim()
+			if (visualRequest.isEmpty()) {
+				throw new GradleException('Managed smoke visual-capture command is empty')
+			}
+			['saves', 'mods'].each { name ->
+				def directory = new File(gameDir, name)
+				if (directory.exists() && (!directory.isDirectory()
+					|| directory.listFiles() == null || directory.listFiles().length != 0)) {
+					throw new GradleException('Managed smoke cannot use a populated game directory')
+				}
+			}
+			def agent = project.tasks.named('hgnRuntimePrototypeJar').get().archiveFile.get().asFile
+			if (!agent.isFile() || task.mods.files.size() != (sodium ? 4 : 3)
+				|| task.mods.files.any { it.name.toLowerCase(java.util.Locale.ROOT).contains('hgn') }) {
+				throw new GradleException('Managed smoke must use the agent, three Fabric API mods, and optional pinned Sodium')
+			}
+			moduleNames.eachWithIndex { name, index ->
+				def file = new File(modulesDir, name)
+				def digest = java.security.MessageDigest.getInstance('SHA-256')
+				file.withInputStream { input ->
+					byte[] buffer = new byte[8192]
+					int count
+					while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
+				}
+				if (digest.digest().encodeHex().toString() != moduleHashes[index]) {
+					throw new GradleException('Managed smoke Fabric API module differs from its pin')
+				}
+			}
+			if (sodium) {
+				def file = new File(modulesDir, sodiumName)
+				def digest = java.security.MessageDigest.getInstance('SHA-512')
+				file.withInputStream { input ->
+					byte[] buffer = new byte[8192]
+					int count
+					while ((count = input.read(buffer)) != -1) digest.update(buffer, 0, count)
+				}
+				if (digest.digest().encodeHex().toString() != sodiumHash) {
+					throw new GradleException('Managed smoke Sodium differs from its pinned Modrinth release')
+				}
+			}
+			project.logger.lifecycle('HGN_MANAGED_AGENT=' + agent.absolutePath)
+			project.logger.lifecycle('HGN_MANAGED_MODS=' + task.mods.files*.name.sort().join(','))
+			startedAt = System.currentTimeMillis()
+		}
+		task.doLast {
+			def log = new File(gameDir, 'logs/latest.log')
+			if (!log.isFile() || log.lastModified() < startedAt
+				|| !log.getText('UTF-8').contains('HGN_VISUAL_READY=' + visualRequest + ' SCREEN=')) {
+				throw new GradleException('Managed smoke game exited without rendering the requested HGN screen')
+			}
+		}
+	}
+}

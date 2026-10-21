@@ -1,0 +1,34 @@
+loom {
+	forge {
+		mixinConfig 'hgn-client.mixins.json'
+	}
+}
+
+dependencies {
+	forge "net.minecraftforge:forge:${rootProject.ext.mcVersion}-${rootProject.ext.forgeVersion}"
+}
+
+tasks.named('remapJar').configure {
+	doLast {
+		def output = archiveFile.get().asFile
+		int classCount = 0
+		def requiredEntries = [
+			'META-INF/mods.toml',
+			'hgn-client.mixins.json',
+			'online/horizongate/hgn/forge/HgnForge.class'
+		]
+
+		new java.util.zip.ZipFile(output).withCloseable { archive ->
+			def entries = archive.entries()
+			while (entries.hasMoreElements()) {
+				def entry = entries.nextElement()
+				if (!entry.directory && entry.name.endsWith('.class')) classCount++
+			}
+			def missing = requiredEntries.findAll { archive.getEntry(it) == null }
+			if (classCount == 0 || !missing.isEmpty()) {
+				throw new GradleException("Forge remapped jar is incomplete: ${classCount} classes, missing ${missing} (${output})")
+			}
+		}
+		logger.lifecycle("Verified Forge remapped jar: ${classCount} classes, descriptor, mixins and loader entrypoint (${output})")
+	}
+}

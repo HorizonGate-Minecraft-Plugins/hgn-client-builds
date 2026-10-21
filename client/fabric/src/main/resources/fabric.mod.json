@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "hgn-client",
+	"version": "${version}",
+	"name": "HGN Minecraft Client",
+	"description": "The official HorizonGate Network Minecraft client: futuristic HGN main menu, direct connection to hub.horizongate.online, and pinned official servers.",
+	"authors": ["HorizonGate Network"],
+	"contact": {
+		"homepage": "https://horizongate.online",
+		"sources": "https://github.com/HorizonGate-Minecraft-Plugins/HGN-MC-Launcher"
+	},
+	"license": "All-Rights-Reserved",
+	"icon": "assets/hgn-client/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["online.horizongate.hgn.fabric.HgnFabric"]
+	},
+	"mixins": ["hgn-client.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "${mcVersion}",
+		"java": ">=21"
+	}
+}

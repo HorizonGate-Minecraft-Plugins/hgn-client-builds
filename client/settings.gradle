@@ -1,0 +1,41 @@
+pluginManagement {
+	repositories {
+		maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+		maven { name = 'Architectury'; url = 'https://maven.architectury.dev/' }
+		maven { name = 'MinecraftForge'; url = 'https://maven.minecraftforge.net/' }
+		maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+// Minecraft 26.x needs Java 25 while 1.21.x needs Java 21, so let Gradle fetch
+// whichever JDK a target requires instead of depending on what is installed.
+plugins {
+	id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'hgn-client'
+
+def matrix = new Properties()
+file('versions.properties').withInputStream { matrix.load(it) }
+
+def defaults = new Properties()
+file('gradle.properties').withInputStream { defaults.load(it) }
+
+def mc = startParameter.projectProperties.get('mc') ?: defaults.getProperty('default_mc')
+
+// Loom does its Minecraft remapping during configuration, so every included
+// loader pays that cost even when only one is being built. -Ploader=<name>
+// narrows the build to a single target, which is what the matrix sweep uses.
+def only = startParameter.projectProperties.get('loader')
+
+// Loom cannot be configured for a loader that has no build for this Minecraft
+// version, so unavailable targets are excluded rather than skipped later.
+def available = ['fabric'] + ['forge', 'neoforge'].findAll { matrix.getProperty("${mc}.${it}")?.trim() }
+
+if (only && !available.contains(only)) {
+	throw new GradleException("No ${only} build exists for Minecraft ${mc}. Available: ${available.join(', ')}")
+}
+
+(only ? [only] : available).each { include it }

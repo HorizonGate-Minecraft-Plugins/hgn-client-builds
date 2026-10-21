@@ -5,13 +5,14 @@
 The banner and [Hub artwork](.github/assets/server-hub-v2.png) are HGN
 illustrations. They are not gameplay screenshots.
 
-Published builds of the HGN Minecraft client patch layer. The HGN Launcher
-downloads the build matching an instance's loader and Minecraft version when the
-instance is created, so the launcher itself does not have to ship a jar for every
-combination.
+Public source and published builds of the HGN Minecraft client patch layer.
+The HGN Launcher downloads the build matching an instance's loader and
+Minecraft version when the instance is created, so the launcher itself does
+not have to ship a jar for every combination.
 
-This repository holds build output and public release previews. The source
-lives in the `client/` directory of the HGN Launcher repository.
+The client source is in [`client/`](client/). The launcher application is a
+separate private project; do not publish its source or installer in this
+client repository.
 
 Printable [A4 cape coloring sheets](.github/assets/printables/hgn-cape-a4-2pages.pdf)
 include outside/back and inside/front templates with full black borders. Print
@@ -95,13 +96,13 @@ must not be presented as live data or implemented features without verification.
 
 ## Coverage
 
-The ALPHA-V1.8.21 candidate adds optional client-side `hgn:boss_voice` and
+The ALPHA-V1.8.21 client adds optional client-side `hgn:boss_voice` and
 `hgn:boss_fx` handling to the existing 1.21.4 Fabric, Forge, and NeoForge HUD
 builds. The exact three jars passed the home-routed
 [targeted build](https://github.com/HorizonGate-Minecraft-Plugins/HGN-MC-Launcher/actions/runs/39617305290)
-from launcher source `bd63852`. This verifies packaging and local protocol
+from source `bd63852`, mirrored here in [`client/`](client/). This verifies packaging and local protocol
 checks, not audible speech, rendered effects, paid-account sign-in, or a live
-multiplayer session. The matching launcher installer is not published yet.
+multiplayer session. A matching launcher installer is not published yet.
 
 The ALPHA-V1.8.20 client set contains the updated HGN HUD for
 Minecraft 1.21.4 on Fabric, Forge, and NeoForge (three exact targets). Its

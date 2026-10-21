@@ -1,0 +1,291 @@
+def prototypeTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+	def leaf = taskName.tokenize(':').last()
+	leaf in ['hgnRuntimePrototypeJar', 'hgnRuntimeResourcePack',
+		'verifyHgnRuntimePrototype', 'verifyHgnRuntimeKnot', 'proveHgnRuntimePair',
+		'runManagedPrototypeClient']
+}
+if (prototypeTaskRequested && rootProject.ext.mcVersion != '1.21.4') {
+	throw new GradleException('The first-party runtime prototype is scoped to Minecraft 1.21.4')
+}
+
+dependencies {
+	modImplementation "net.fabricmc:fabric-loader:${rootProject.loader_version}"
+
+	// Only the Fabric API modules the client actually uses, and bundled into the
+	// jar rather than depended on. Requiring the full Fabric API meant the game
+	// refused to start unless the player already had it installed, which is not
+	// something a client layer should ever ask of them.
+	// fabric-resource-loader-v0 is what puts a mod's assets/ into the resource
+	// manager. Without it the client's own textures cannot be found at all, and
+	// every screen silently falls back to drawing without them.
+	def bundledModules = ['fabric-api-base', 'fabric-networking-api-v1', 'fabric-resource-loader-v0']
+	if (rootProject.ext.apiGen in ['g1219', 'g12111', 'g2601']) {
+		bundledModules.add('fabric-resource-loader-v1')
+	}
+	bundledModules.each {
+		include(modImplementation(fabricApi.module(it, rootProject.ext.fabricApiVersion)))
+	}
+}
+
+tasks.named('remapJar').configure {
+	doLast {
+		def output = archiveFile.get().asFile
+		int classCount = 0
+		def runtimeClasses = []
+		def requiredEntries = [
+			'fabric.mod.json',
+			'hgn-client.mixins.json',
+			'online/horizongate/hgn/fabric/HgnFabric.class'
+		]
+
+		new java.util.zip.ZipFile(output).withCloseable { archive ->
+			def entries = archive.entries()
+			while (entries.hasMoreElements()) {
+				def entry = entries.nextElement()
+				if (!entry.directory && entry.name.endsWith('.class')) classCount++
+				if (!entry.directory && entry.name.startsWith('online/horizongate/hgn/runtime/')) {
+					runtimeClasses.add(entry.name)
+				}
+			}
+			def missing = requiredEntries.findAll { archive.getEntry(it) == null }
+			if (classCount == 0 || !missing.isEmpty()) {
+				throw new GradleException("Fabric remapped jar is incomplete: ${classCount} classes, missing ${missing} (${output})")
+			}
+			if (!prototypeTaskRequested && !runtimeClasses.isEmpty()) {
+				throw new GradleException("Shipping Fabric jar contains non-shipping runtime prototype classes: ${runtimeClasses} (${output})")
+			}
+		}
+		logger.lifecycle("Verified Fabric remapped jar: ${classCount} classes, descriptor, mixins and loader entrypoint (${output})")
+	}
+}
+
+if (prototypeTaskRequested) {
+	// Remap the prototype with the same Loom task as the HGN classes it calls.
+	// The resulting agent omits Fabric API's nested mod JARs; a managed install
+	// must provide the required compatible API modules as separate mods.
+	sourceSets.main.java.srcDir rootProject.file('prototype/src/main/java')
+	sourceSets.create('runtimePatchTest') {
+		java.srcDir rootProject.file('prototype/src/test/java')
+		compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+		runtimeClasspath += output + compileClasspath
+	}
+	dependencies {
+		compileOnly 'org.ow2.asm:asm:9.10.1'
+		runtimePatchTestImplementation 'org.ow2.asm:asm:9.10.1'
+	}
+	if (rootProject.loader_version != '0.19.3') {
+		throw new GradleException('The managed runtime proof requires Fabric Loader 0.19.3')
+	}
+	tasks.register('verifyHgnRuntimeKnot', JavaExec) {
+		group = 'verification'
+		description = 'Check the managed agent against the exact official Fabric Loader 0.19.3 bytecode.'
+		dependsOn tasks.named('runtimePatchTestClasses')
+		classpath = sourceSets.runtimePatchTest.runtimeClasspath
+		mainClass = 'online.horizongate.hgn.runtime.HgnRuntimeAgentPatchTest'
+		def pinnedLoader = configurations.detachedConfiguration(
+			dependencies.create("net.fabricmc:fabric-loader:${rootProject.loader_version}"))
+		pinnedLoader.transitive = false
+		inputs.files(pinnedLoader)
+		doFirst {
+			args pinnedLoader.singleFile.absolutePath
+		}
+	}
+}
+
+tasks.register('hgnRuntimePrototypeJar', Jar) {
+	doFirst {
+		if (rootProject.ext.mcVersion != '1.21.4') {
+			throw new GradleException('The first-party runtime prototype is scoped to Minecraft 1.21.4')
+		}
+	}
+	group = 'verification'
+	description = 'Package a non-shipping, namespace-filtered 1.21.4 HGN runtime prototype.'
+	dependsOn tasks.named('remapJar')
+	archiveBaseName.set("hgn-client-runtime-${rootProject.ext.mcVersion}-fabric-0.19.3")
+	archiveVersion.set("${rootProject.ext.hgnVersion}")
+	archiveExtension.set('jar')
+	duplicatesStrategy = DuplicatesStrategy.FAIL
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+	includeEmptyDirs = false
+	manifest.attributes(
+		'Premain-Class': 'online.horizongate.hgn.runtime.HgnRuntimeAgent',
+		'Can-Redefine-Classes': 'false',
+		'Can-Retransform-Classes': 'false'
+	)
+	from({ zipTree(tasks.named('remapJar').get().archiveFile.get().asFile) }) {
+		include 'online/horizongate/hgn/**'
+		include 'assets/hgn-client/**'
+		include 'hgn-client.mixins.json'
+		exclude 'online/horizongate/hgn/fabric/**'
+	}
+}
+
+tasks.register('hgnRuntimeResourcePack', Zip) {
+	doFirst {
+		if (rootProject.ext.mcVersion != '1.21.4') {
+			throw new GradleException('The first-party resource pack prototype is scoped to Minecraft 1.21.4')
+		}
+	}
+	group = 'verification'
+	description = 'Package HGN assets as a separate, non-shipping Minecraft 1.21.4 resource pack.'
+	archiveBaseName.set("hgn-client-resources-${rootProject.ext.mcVersion}-fabric-0.19.3")
+	archiveVersion.set("${rootProject.ext.hgnVersion}")
+	destinationDirectory.set(layout.buildDirectory.dir('libs'))
+	duplicatesStrategy = DuplicatesStrategy.FAIL
+	preserveFileTimestamps = false
+	reproducibleFileOrder = true
+	includeEmptyDirs = false
+	from rootProject.file('prototype/src/main/resources')
+	from(rootProject.file('common/src/main/resources')) {
+		include 'assets/hgn-client/**'
+	}
+}
+
+tasks.register('verifyHgnRuntimePrototype') {
+	group = 'verification'
+	dependsOn tasks.named('hgnRuntimePrototypeJar')
+	doLast {
+		def artifact = tasks.named('hgnRuntimePrototypeJar').get().archiveFile.get().asFile
+		new java.util.zip.ZipFile(artifact).withCloseable { jar ->
+			def names = []
+			def entries = jar.entries()
+			while (entries.hasMoreElements()) {
+				def entry = entries.nextElement()
+				if (entry.directory) continue
+				def name = entry.name
+				if (name.startsWith('/') || name.contains('\\') ||
+					name.tokenize('/').size() != name.split('/', -1).size() ||
+					name.tokenize('/').any { it == '.' || it == '..' }) {
+					throw new GradleException("Runtime prototype contains an unsafe ZIP path: ${name}")
+				}
+				if (entry.size <= 0 || entry.crc < 0) {
+					throw new GradleException("Runtime prototype contains an empty or incomplete ZIP entry: ${name}")
+				}
+				def checksum = new java.util.zip.CRC32()
+				long length = 0
+				jar.getInputStream(entry).withCloseable { stream ->
+					byte[] buffer = new byte[8192]
+					int read
+					while ((read = stream.read(buffer)) != -1) {
+						checksum.update(buffer, 0, read)
+						length += read
+					}
+				}
+				if (length != entry.size || checksum.value != entry.crc) {
+					throw new GradleException("Runtime prototype contains a corrupt ZIP entry: ${name}")
+				}
+				names.add(name)
+			}
+			if (names.size() != names.toSet().size()) {
+				throw new GradleException('Runtime prototype contains duplicate ZIP entries')
+			}
+			if (!names.contains('online/horizongate/hgn/HgnClient.class') ||
+				!names.contains('online/horizongate/hgn/runtime/HgnRuntimeBootstrap.class') ||
+				!names.contains('online/horizongate/hgn/runtime/HgnRuntimeFabricPlatform.class') ||
+				!names.contains('online/horizongate/hgn/runtime/HgnRuntimeAgent.class') ||
+				!names.contains('hgn-client.mixins.json')) {
+				throw new GradleException('Runtime prototype is missing its HGN core or mixin declaration')
+			}
+			def manifest = new java.util.jar.Manifest(
+				jar.getInputStream(jar.getEntry('META-INF/MANIFEST.MF')))
+			if (manifest.mainAttributes.getValue('Premain-Class') !=
+				'online.horizongate.hgn.runtime.HgnRuntimeAgent') {
+				throw new GradleException('Runtime prototype is missing its agent entrypoint')
+			}
+			def mixinConfig = new groovy.json.JsonSlurper().parseText(
+				jar.getInputStream(jar.getEntry('hgn-client.mixins.json')).getText('UTF-8'))
+			def mixinPackage = mixinConfig['package']?.replace('.', '/')
+			if (mixinPackage != 'online/horizongate/hgn/mixin' ||
+				!(mixinConfig.client instanceof List) || mixinConfig.client.isEmpty() ||
+				mixinConfig.client.any { mixin ->
+					!(mixin instanceof String) || !names.contains("${mixinPackage}/${mixin}.class".toString())
+				}) {
+				throw new GradleException('Runtime prototype is missing a declared HGN client mixin')
+			}
+			def assetRoot = rootProject.file('common/src/main/resources/assets/hgn-client')
+			def assets = rootProject.fileTree(assetRoot).files
+			def allowedAssetExtensions = ['.json', '.mcmeta', '.pem', '.png', '.ttf', '.txt']
+			def expectedAssets = assets.collect { source ->
+				def relative = assetRoot.toPath().relativize(source.toPath()).toString().replace('\\', '/')
+				"assets/hgn-client/${relative}"
+			}
+			if (assets.isEmpty() || assets.any { source ->
+				source.length() <= 0 || !allowedAssetExtensions.any { source.name.endsWith(it) }
+			} || names.findAll { it.startsWith('assets/hgn-client/') }.toSet() != expectedAssets.toSet()) {
+				throw new GradleException('Runtime prototype has missing, unexpected, empty, or disallowed assets')
+			}
+			names.findAll { it.startsWith('assets/hgn-client/') }.each { name ->
+				def bytes = jar.getInputStream(jar.getEntry(name)).withCloseable { it.readAllBytes() }
+				if (name.endsWith('.png')) {
+					def image = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes))
+					if (image == null || image.width <= 0 || image.height <= 0) {
+						throw new GradleException("Runtime prototype has a corrupt PNG: ${name}")
+					}
+				} else if (name.endsWith('.ttf')) {
+					if (bytes.length < 4 || new java.io.DataInputStream(
+						new java.io.ByteArrayInputStream(bytes)).readInt() != 0x00010000) {
+						throw new GradleException("Runtime prototype has a corrupt font: ${name}")
+					}
+				} else {
+					def content
+					try {
+						content = java.nio.charset.StandardCharsets.UTF_8.newDecoder()
+							.onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
+							.onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT)
+							.decode(java.nio.ByteBuffer.wrap(bytes)).toString()
+					} catch (java.nio.charset.CharacterCodingException failure) {
+						throw new GradleException("Runtime prototype has non-UTF-8 asset data: ${name}", failure)
+					}
+					if (content.indexOf(0) >= 0 ||
+						name.endsWith('.pem') && !(content.startsWith('-----BEGIN CERTIFICATE-----') &&
+							content.contains('-----END CERTIFICATE-----'))) {
+						throw new GradleException("Runtime prototype has invalid text or certificate data: ${name}")
+					}
+					if (name.endsWith('.json') || name.endsWith('.mcmeta')) {
+						new groovy.json.JsonSlurper().parseText(content)
+					}
+				}
+			}
+			if (names.any { name ->
+				!(name.startsWith('online/horizongate/hgn/') && name.endsWith('.class') ||
+					name.startsWith('assets/hgn-client/') && allowedAssetExtensions.any { name.endsWith(it) } ||
+					name == 'hgn-client.mixins.json' ||
+					name == 'META-INF/MANIFEST.MF') ||
+				name.startsWith('online/horizongate/hgn/fabric/') ||
+				name.toLowerCase(java.util.Locale.ROOT).endsWith('.jar') ||
+				name.toLowerCase(java.util.Locale.ROOT).endsWith('.zip')
+			}) {
+				throw new GradleException('Runtime prototype contains an entry outside the selected HGN namespace')
+			}
+			logger.lifecycle("Verified non-shipping HGN runtime prototype structure and CRCs: ${artifact}")
+		}
+	}
+}
+
+tasks.register('proveHgnRuntimePair', Exec) {
+	doFirst {
+		if (rootProject.ext.mcVersion != '1.21.4') {
+			throw new GradleException('The first-party runtime proof is scoped to Minecraft 1.21.4')
+		}
+	}
+	group = 'verification'
+	description = 'Validate both non-shipping HGN archives and write their SHA-256 proof.'
+	dependsOn tasks.named('verifyHgnRuntimePrototype'), tasks.named('verifyHgnRuntimeKnot'),
+		tasks.named('hgnRuntimeResourcePack')
+	def agent = tasks.named('hgnRuntimePrototypeJar').flatMap { it.archiveFile }
+	def pack = tasks.named('hgnRuntimeResourcePack').flatMap { it.archiveFile }
+	def proof = layout.buildDirectory.file(
+		"libs/hgn-client-runtime-proof-1.21.4-fabric-0.19.3-${rootProject.ext.hgnVersion}.json")
+	def verifier = rootProject.file('tools/runtime-pair.mjs')
+	def assets = rootProject.file('common/src/main/resources/assets/hgn-client')
+	inputs.files(agent, pack, verifier, rootProject.file('tools/jar-payload.mjs'))
+	inputs.dir(assets)
+	outputs.file(proof)
+	outputs.upToDateWhen { false }
+	doFirst {
+		commandLine('node', verifier.absolutePath, 'create', agent.get().asFile.absolutePath,
+			pack.get().asFile.absolutePath, proof.get().asFile.absolutePath,
+			rootProject.ext.hgnVersion, rootProject.ext.hgnReleaseName, assets.absolutePath)
+	}
+}

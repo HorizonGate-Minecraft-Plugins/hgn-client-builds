@@ -1,0 +1,33 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "All-Rights-Reserved"
+issueTrackerURL = "https://github.com/HorizonGate-Minecraft-Plugins/HGN-MC-Launcher/issues"
+
+[[mods]]
+modId = "hgn-client"
+version = "${version}"
+displayName = "HGN Minecraft Client"
+displayURL = "https://horizongate.online"
+logoFile = "assets/hgn-client/icon.png"
+authors = "HorizonGate Network"
+description = '''
+The official HorizonGate Network Minecraft client: futuristic HGN main menu,
+direct connection to hub.horizongate.online, and pinned official servers.
+'''
+
+[[mixins]]
+config = "hgn-client.mixins.json"
+
+[[dependencies.hgn-client]]
+modId = "neoforge"
+type = "required"
+versionRange = "[1,)"
+ordering = "NONE"
+side = "CLIENT"
+
+[[dependencies.hgn-client]]
+modId = "minecraft"
+type = "required"
+versionRange = "[${mcVersion}]"
+ordering = "NONE"
+side = "CLIENT"
