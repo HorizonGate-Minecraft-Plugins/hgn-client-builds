@@ -95,6 +95,14 @@ must not be presented as live data or implemented features without verification.
 
 ## Coverage
 
+The ALPHA-V1.8.21 candidate adds optional client-side `hgn:boss_voice` and
+`hgn:boss_fx` handling to the existing 1.21.4 Fabric, Forge, and NeoForge HUD
+builds. The exact three jars passed the home-routed
+[targeted build](https://github.com/HorizonGate-Minecraft-Plugins/HGN-MC-Launcher/actions/runs/39617305290)
+from launcher source `bd63852`. This verifies packaging and local protocol
+checks, not audible speech, rendered effects, paid-account sign-in, or a live
+multiplayer session. The matching launcher installer is not published yet.
+
 The ALPHA-V1.8.20 client set contains the updated HGN HUD for
 Minecraft 1.21.4 on Fabric, Forge, and NeoForge (three exact targets). Its
 public jar excludes entitlement-only Cosmetics textures and models; those are
