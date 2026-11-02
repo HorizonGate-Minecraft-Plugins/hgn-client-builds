@@ -1,0 +1,18 @@
+{
+	"schema": 1,
+	"clientVersion": "1.8.22-alpha.1",
+	"releaseName": "ALPHA-V1.8.22",
+	"minecraft": "1.21.4",
+	"loader": "fabric",
+	"loaderVersion": "0.19.3",
+	"agent": {
+		"file": "hgn-client-runtime-1.21.4-fabric-0.19.3-1.8.22-alpha.1.jar",
+		"size": 25891391,
+		"sha256": "dcc02453213d30c8a2349a06e34b971db70067f1a7356e8d3a67c9a7b7335c02"
+	},
+	"resourcePack": {
+		"file": "hgn-client-resources-1.21.4-fabric-0.19.3-1.8.22-alpha.1.zip",
+		"size": 24915248,
+		"sha256": "4650ab4a5b9fa808ad48e3722e3563e709f47a0c84cee0afebfdba9ada680b04"
+	}
+}
